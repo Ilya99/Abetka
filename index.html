@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Абетка</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --tg-bg:       var(--tg-theme-bg-color, #ffffff);
+    --tg-sec:      var(--tg-theme-secondary-bg-color, #f4f4f5);
+    --tg-text:     var(--tg-theme-text-color, #222222);
+    --tg-hint:     var(--tg-theme-hint-color, #999999);
+    --tg-btn:      var(--tg-theme-button-color, #FF6B35);
+    --tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
+    --tg-link:     var(--tg-theme-link-color, #FF6B35);
+    --radius: 18px;
+    --green:  #34D399;
+    --red:    #F87171;
+    --yellow: #FBBF24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--tg-bg);
+    color: var(--tg-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .prog-wrap { width: 100%; height: 5px; background: var(--tg-sec); flex-shrink: 0; }
+  .prog-fill  { height: 5px; background: var(--tg-btn); border-radius: 0 3px 3px 0; transition: width .5s ease; }
+
+  /* ── TOP ROW ── */
+  .top-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px 8px;
+    flex-shrink: 0;
+  }
+  .counter { font-size: 13px; font-weight: 700; color: var(--tg-hint); }
+  .stars   { display: flex; gap: 2px; font-size: 18px; min-width: 60px; justify-content: flex-end; }
+  .streak-pill {
+    background: var(--tg-sec); border-radius: 20px;
+    padding: 4px 10px; font-size: 13px; font-weight: 800; color: var(--tg-text);
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* ── LETTER CARD ── */
+  .letter-card {
+    margin: 0 16px;
+    background: var(--tg-sec);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 16px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .card-accent {
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: var(--tg-btn); border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .q-label { font-size: 12px; font-weight: 800; color: var(--tg-hint); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+
+  /* ── LETTER + PICTURE BLOCK ── */
+  .letter-picture {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .letter-big {
+    font-size: clamp(72px, 22vw, 120px);
+    font-weight: 900;
+    line-height: 1;
+    color: var(--tg-btn);
+    flex-shrink: 0;
+    user-select: none;
+    transition: none;
+  }
+  .letter-big.pop { animation: letterPop .45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes letterPop {
+    0%  { transform: scale(.4) rotate(-12deg); opacity: 0; }
+    60% { transform: scale(1.12) rotate(3deg); }
+    100%{ transform: scale(1) rotate(0); opacity: 1; }
+  }
+  .divider-line {
+    width: 2px; height: 70px;
+    background: var(--tg-bg);
+    margin: 0 18px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .picture-block {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .picture-emoji {
+    font-size: clamp(44px, 14vw, 72px);
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.1));
+    user-select: none;
+  }
+  .picture-word {
+    font-size: 14px; font-weight: 800; color: var(--tg-text);
+    text-align: center; line-height: 1.2;
+  }
+  .picture-word span { color: var(--tg-btn); }
+
+  .hint-row {
+    font-size: 12px; color: var(--tg-hint); font-weight: 700;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  /* ── CHOICES ── */
+  .section-label {
+    padding: 12px 16px 6px;
+    font-size: 13px; font-weight: 800; color: var(--tg-hint);
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+  .choices {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; padding: 0 16px;
+  }
+  .choice {
+    background: var(--tg-sec);
+    border: 2.5px solid transparent;
+    border-radius: var(--radius);
+    padding: 14px 8px 10px;
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    transition: transform .12s, border-color .15s, background .15s;
+    position: relative; overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .choice:active:not(.locked) { transform: scale(.93); }
+  .choice-letter { font-size: clamp(30px, 9vw, 48px); font-weight: 900; color: var(--tg-text); line-height: 1; }
+  .choice-emoji  { font-size: 22px; }
+  .choice-word   { font-size: 10px; font-weight: 800; color: var(--tg-hint); text-align: center; line-height: 1.2; }
+  .choice.correct { background: #D1FAE5; border-color: var(--green); }
+  .choice.correct .choice-letter { color: #065F46; }
+  .choice.correct .choice-word   { color: #059669; }
+  .choice.wrong   { background: #FEE2E2; border-color: var(--red); animation: shake .4s ease; }
+  .choice.wrong .choice-letter   { color: #991B1B; }
+  .choice.dim     { opacity: .4; pointer-events: none; }
+  .choice.locked  { pointer-events: none; }
+  @keyframes shake {
+    0%,100%{ transform:translateX(0) }
+    20%{ transform:translateX(-7px) }
+    40%{ transform:translateX(7px) }
+    60%{ transform:translateX(-4px) }
+    80%{ transform:translateX(4px) }
+  }
+
+  /* ── FEEDBACK TOAST ── */
+  .toast {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(.7);
+    background: var(--tg-sec); border-radius: 20px;
+    padding: 16px 28px; text-align: center;
+    opacity: 0; pointer-events: none; z-index: 200;
+    transition: all .25s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 8px 32px rgba(0,0,0,.15);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  .toast-emoji { font-size: 48px; display: block; line-height: 1.1; }
+  .toast-text  { font-size: 18px; font-weight: 900; margin-top: 4px; }
+
+  /* ── NEXT BUTTON ── */
+  .next-wrap { padding: 12px 16px 20px; }
+  .next-btn {
+    width: 100%; padding: 16px;
+    background: var(--tg-btn); color: var(--tg-btn-text);
+    font-size: 17px; font-weight: 900; font-family: 'Nunito', sans-serif;
+    border: none; border-radius: var(--radius); cursor: pointer;
+    opacity: 0; pointer-events: none; transform: translateY(8px);
+    transition: opacity .3s, transform .3s, box-shadow .1s;
+    box-shadow: 0 4px 0 rgba(0,0,0,.15);
+  }
+  .next-btn.show { opacity: 1; pointer-events: all; transform: translateY(0); }
+  .next-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.15); }
+
+  /* ── FINISH SCREEN ── */
+  .finish {
+    position: fixed; inset: 0; background: var(--tg-bg);
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 12px; padding: 32px; z-index: 300;
+    text-align: center;
+  }
+  .finish.show { display: flex; }
+  .finish-trophy { font-size: 90px; animation: trophyIn .6s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes trophyIn { 0%{transform:scale(0) rotate(-20deg)}100%{transform:scale(1) rotate(0)} }
+  .finish-title { font-size: 28px; font-weight: 900; }
+  .finish-score { font-size: 16px; color: var(--tg-hint); font-weight: 700; }
+  .finish-score b { color: var(--tg-text); font-size: 20px; }
+  .restart-btn {
+    margin-top: 8px; padding: 16px 48px;
+    background: var(--tg-btn); color: var(--tg-btn-text);
+    font-size: 17px; font-weight: 900; font-family: 'Nunito', sans-serif;
+    border: none; border-radius: var(--radius); cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,.15);
+  }
+
+  /* ── CONFETTI ── */
+  .cf {
+    position: fixed; top: -20px; width: 9px; height: 9px;
+    pointer-events: none; z-index: 400; border-radius: 2px;
+    animation: cfFall linear forwards;
+  }
+  @keyframes cfFall {
+    0%  { transform: translateY(0) rotate(0);   opacity: 1; }
+    100%{ transform: translateY(105vh) rotate(600deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="prog-wrap"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+
+<div class="top-row">
+  <div class="counter" id="counter">1 / 33</div>
+  <div class="streak-pill">🔥 <span id="streakNum">0</span></div>
+  <div class="stars" id="stars"></div>
+</div>
+
+<div class="letter-card">
+  <div class="card-accent"></div>
+  <div class="q-label">Яка це літера?</div>
+  <div class="letter-picture">
+    <div class="letter-big" id="letterBig">А</div>
+    <div class="divider-line"></div>
+    <div class="picture-block">
+      <div class="picture-emoji" id="picEmoji">🍉</div>
+      <div class="picture-word" id="picWord"><span>А</span>рбуз</div>
+    </div>
+  </div>
+  <div class="hint-row">👆 Обери правильну літеру знизу</div>
+</div>
+
+<div class="section-label">Варіанти відповіді</div>
+<div class="choices" id="choices"></div>
+<div class="next-wrap"><button class="next-btn" id="nextBtn" onclick="next()">Далі →</button></div>
+
+<div class="toast" id="toast">
+  <span class="toast-emoji" id="toastEmoji">🎉</span>
+  <div class="toast-text" id="toastText">Молодець!</div>
+</div>
+
+<div class="finish" id="finish">
+  <div class="finish-trophy">🏆</div>
+  <div class="finish-title">Вся абетка!</div>
+  <div class="finish-score">Правильних відповідей:<br><b id="finScore">0 / 33</b></div>
+  <button class="restart-btn" onclick="restart()">Ще раз 🔄</button>
+</div>
+
+<script>
+// ── TELEGRAM INIT ──────────────────────────────────
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.BackButton.onClick(() => {
+    if (document.getElementById('finish').classList.contains('show')) restart();
+  });
+}
+function haptic(type) {
+  try { tg?.HapticFeedback?.impactOccurred(type); } catch(e) {}
+}
+function hapticNotif(type) {
+  try { tg?.HapticFeedback?.notificationOccurred(type); } catch(e) {}
+}
+
+// ── DATA ───────────────────────────────────────────
+const ALPHA = [
+  { l:'А', word:'Арбуз',    emoji:'🍉' },
+  { l:'Б', word:'Бджола',   emoji:'🐝' },
+  { l:'В', word:'Вовк',     emoji:'🐺' },
+  { l:'Г', word:'Гриб',     emoji:'🍄' },
+  { l:'Ґ', word:'Ґудзик',   emoji:'🔘' },
+  { l:'Д', word:'Дерево',   emoji:'🌳' },
+  { l:'Е', word:'Енот',     emoji:'🦝' },
+  { l:'Є', word:'Єнот',     emoji:'🦊' },
+  { l:'Ж', word:'Жираф',    emoji:'🦒' },
+  { l:'З', word:'Зірка',    emoji:'⭐' },
+  { l:'И', word:'Іграшка',  emoji:'🧸' },
+  { l:'І', word:'Індик',    emoji:'🦃' },
+  { l:'Ї', word:'Їжак',     emoji:'🦔' },
+  { l:'Й', word:'Йогурт',   emoji:'🥛' },
+  { l:'К', word:'Кіт',      emoji:'🐱' },
+  { l:'Л', word:'Лисиця',   emoji:'🦊' },
+  { l:'М', word:'Миша',     emoji:'🐭' },
+  { l:'Н', word:'Носоріг',  emoji:'🦏' },
+  { l:'О', word:'Олень',    emoji:'🦌' },
+  { l:'П', word:'Пінгвін',  emoji:'🐧' },
+  { l:'Р', word:'Ракета',   emoji:'🚀' },
+  { l:'С', word:'Слон',     emoji:'🐘' },
+  { l:'Т', word:'Тигр',     emoji:'🐯' },
+  { l:'У', word:'Удав',     emoji:'🐍' },
+  { l:'Ф', word:'Фламінго', emoji:'🦩' },
+  { l:'Х', word:'Хомяк',    emoji:'🐹' },
+  { l:'Ц', word:'Цибуля',   emoji:'🧅' },
+  { l:'Ч', word:'Черепаха', emoji:'🐢' },
+  { l:'Ш', word:'Шапка',    emoji:'🎩' },
+  { l:'Щ', word:'Щука',     emoji:'🐟' },
+  { l:'Ь', word:'Тінь',     emoji:'🌙' },
+  { l:'Ю', word:'Юла',      emoji:'🌀' },
+  { l:'Я', word:'Яблуко',   emoji:'🍎' },
+];
+
+const PRAISE = ['Молодець! 🌟','Чудово! 🎉','Супер! 💪','Брaво! 🏆','Клас! ⚡','Правильно! 💫'];
+const WRONG  = ['Спробуй ще 💙','Майже! 🌈','Не здавайся 😊'];
+
+function shuffle(a) { return [...a].sort(()=>Math.random()-.5); }
+
+// ── STATE ─────────────────────────────────────────
+let queue = [], cur = null, qNum = 0, score = 0, streak = 0, locked = false;
+
+// ── AUDIO ─────────────────────────────────────────
+let actx;
+function tone(freq, dur, type='sine') {
+  try {
+    if (!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.connect(g); g.connect(actx.destination);
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(.25, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, actx.currentTime+dur);
+    o.start(); o.stop(actx.currentTime+dur);
+  } catch(e) {}
+}
+function playCorrect() { tone(660,.1); setTimeout(()=>tone(880,.15),110); }
+function playWrong()   { tone(200,.3,'sawtooth'); }
+
+// ── RENDER QUESTION ───────────────────────────────
+function startQ(item) {
+  locked = false; cur = item; qNum++;
+
+  // header
+  document.getElementById('counter').textContent = `${qNum} / ${ALPHA.length}`;
+  document.getElementById('prog').style.width = ((qNum-1)/ALPHA.length*100)+'%';
+
+  // letter
+  const lb = document.getElementById('letterBig');
+  lb.textContent = item.l;
+  lb.classList.remove('pop');
+  void lb.offsetWidth;
+  lb.classList.add('pop');
+
+  // picture
+  document.getElementById('picEmoji').textContent = item.emoji;
+  // bold first letter
+  const w = item.word;
+  document.getElementById('picWord').innerHTML = `<span>${w[0]}</span>${w.slice(1)}`;
+
+  // choices: correct + 3 random wrong
+  const wrongs = shuffle(ALPHA.filter(x=>x.l!==item.l)).slice(0,3);
+  const opts   = shuffle([item, ...wrongs]);
+
+  const el = document.getElementById('choices');
+  el.innerHTML = '';
+  opts.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.dataset.letter = opt.l;
+    btn.innerHTML = `
+      <div class="choice-emoji">${opt.emoji}</div>
+      <div class="choice-letter">${opt.l}</div>
+      <div class="choice-word">${opt.word}</div>`;
+    btn.onclick = () => pick(btn, opt.l === item.l);
+    el.appendChild(btn);
+  });
+
+  const nb = document.getElementById('nextBtn');
+  nb.classList.remove('show');
+}
+
+// ── HANDLE PICK ───────────────────────────────────
+function pick(btn, isCorrect) {
+  if (locked) return;
+  locked = true;
+
+  const allBtns = document.querySelectorAll('.choice');
+
+  if (isCorrect) {
+    btn.classList.add('correct', 'locked');
+    allBtns.forEach(b => { if (b !== btn) b.classList.add('dim','locked'); });
+    score++; streak++;
+    document.getElementById('streakNum').textContent = streak;
+    showToast(true);
+    playCorrect();
+    hapticNotif('success');
+    if (streak >= 3) confetti();
+    addStar();
+  } else {
+    btn.classList.add('wrong', 'locked');
+    // reveal correct
+    allBtns.forEach(b => {
+      if (b.dataset.letter === cur.l) b.classList.add('correct','locked');
+      else if (b !== btn) b.classList.add('dim','locked');
+    });
+    streak = 0;
+    document.getElementById('streakNum').textContent = 0;
+    showToast(false);
+    playWrong();
+    hapticNotif('error');
+  }
+
+  setTimeout(()=>{
+    document.getElementById('nextBtn').classList.add('show');
+  }, 700);
+}
+
+// ── NEXT ──────────────────────────────────────────
+function next() {
+  haptic('light');
+  if (queue.length === 0) { showFinish(); return; }
+  startQ(queue.shift());
+}
+
+// ── TOAST ─────────────────────────────────────────
+let toastTimer;
+function showToast(ok) {
+  const t  = document.getElementById('toast');
+  const em = document.getElementById('toastEmoji');
+  const tx = document.getElementById('toastText');
+  if (ok) {
+    em.textContent = ['🎉','⭐','🌟','💫','🏆'][Math.floor(Math.random()*5)];
+    tx.textContent = PRAISE[Math.floor(Math.random()*PRAISE.length)];
+    tx.style.color = 'var(--green)';
+  } else {
+    em.textContent = ['💙','🌈','😊'][Math.floor(Math.random()*3)];
+    tx.textContent = WRONG[Math.floor(Math.random()*WRONG.length)];
+    tx.style.color = 'var(--tg-btn)';
+  }
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1300);
+}
+
+// ── STARS ─────────────────────────────────────────
+function addStar() {
+  const row = document.getElementById('stars');
+  if (row.children.length >= 4) row.removeChild(row.firstChild);
+  const s = document.createElement('span');
+  s.textContent = '⭐';
+  s.style.cssText = 'display:inline-block;animation:starPop .35s ease';
+  row.appendChild(s);
+}
+
+// ── CONFETTI ──────────────────────────────────────
+function confetti() {
+  const cols = ['#FF6B35','#4ECDC4','#FBBF24','#A78BFA','#34D399','#F87171'];
+  for (let i=0; i<28; i++) setTimeout(()=>{
+    const c = document.createElement('div');
+    c.className = 'cf';
+    c.style.left = Math.random()*100+'vw';
+    c.style.background = cols[Math.floor(Math.random()*cols.length)];
+    c.style.animationDuration = (1.4+Math.random()*1.8)+'s';
+    c.style.borderRadius = Math.random()>.5 ? '50%' : '2px';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 3500);
+  }, i*50);
+}
+
+// ── FINISH ────────────────────────────────────────
+function showFinish() {
+  document.getElementById('prog').style.width = '100%';
+  document.getElementById('finScore').textContent = `${score} / ${ALPHA.length}`;
+  document.getElementById('finish').classList.add('show');
+  confetti(); setTimeout(confetti, 600);
+  hapticNotif('success');
+  if (tg) tg.BackButton.show();
+}
+
+// ── RESTART ───────────────────────────────────────
+function restart() {
+  score = 0; streak = 0; qNum = 0;
+  document.getElementById('streakNum').textContent = 0;
+  document.getElementById('stars').innerHTML = '';
+  document.getElementById('finish').classList.remove('show');
+  if (tg) tg.BackButton.hide();
+  queue = shuffle(ALPHA);
+  startQ(queue.shift());
+}
+
+// ── START ─────────────────────────────────────────
+const style = document.createElement('style');
+style.textContent = '@keyframes starPop{0%{transform:scale(0)}50%{transform:scale(1.5)}100%{transform:scale(1)}}';
+document.head.appendChild(style);
+
+queue = shuffle(ALPHA);
+startQ(queue.shift());
+</script>
+</body>
+</html>
